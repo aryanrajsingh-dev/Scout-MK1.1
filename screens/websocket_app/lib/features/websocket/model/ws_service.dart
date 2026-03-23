@@ -95,6 +95,7 @@ class WebSocketService {
 
     _transport.onData.listen((data) {
       _mavParser.parse(data);
+      print('Received data: ${data.length} bytes');
     });
 
     await _transport.send(Uint8List.fromList([0]));
