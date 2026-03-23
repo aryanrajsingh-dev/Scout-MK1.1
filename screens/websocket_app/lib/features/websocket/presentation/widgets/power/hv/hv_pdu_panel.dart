@@ -1,8 +1,9 @@
+import 'package:websocket_app/features/websocket/presentation/widgets/power/telemetry_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:websocket_app/features/websocket/provider/app_providers.dart';
-import 'package:websocket_app/mavlink/telemetry.dart';
+import 'package:websocket_app/dialects/telemetry.dart';
 
 class HvPduPanel extends ConsumerWidget {
   const HvPduPanel({super.key});
@@ -11,7 +12,7 @@ class HvPduPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(webSocketServiceProvider);
 
-    return StreamBuilder<HvPduStatus>(
+    return StreamBuilder<HvPdu>(
       stream: service.hvPduStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -27,7 +28,7 @@ class HvPduPanel extends ConsumerWidget {
             children: [
               const _SectionHeader('HV PDU'),
               const Divider(height: 10),
-              _denseMetric('Main Contactor', d.mainContactor ? 'ON' : 'OFF'),
+              _denseMetric('Main Contactor', d.mainContactorBool ? 'ON' : 'OFF'),
               const SizedBox(height: 4),
               _denseMetric('Motor Current', '${d.motorCurrent.toStringAsFixed(1)} A'),
               const SizedBox(height: 4),

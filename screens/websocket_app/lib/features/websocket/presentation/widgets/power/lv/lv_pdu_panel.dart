@@ -1,8 +1,9 @@
+import 'package:websocket_app/features/websocket/presentation/widgets/power/telemetry_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:websocket_app/features/websocket/provider/app_providers.dart';
-import 'package:websocket_app/mavlink/telemetry.dart';
+import 'package:websocket_app/dialects/telemetry.dart';
 
 class LvPduPanel extends ConsumerWidget {
   const LvPduPanel({super.key});
@@ -11,7 +12,7 @@ class LvPduPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(webSocketServiceProvider);
 
-    return StreamBuilder<LvPduStatus>(
+    return StreamBuilder<LvPdu>(
       stream: service.lvPduStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -47,10 +48,10 @@ class LvPduPanel extends ConsumerWidget {
                 spacing: 6,
                 runSpacing: 6,
                 children: List.generate(6, (index) {
-                  final enabled = d.channelEnabled(index);
-                  final current =
+                    final enabled = d.channelEnabled(index);
+                    final current =
                       index < d.channelCurrents.length ? d.channelCurrents[index] : 0.0;
-                  return _channel('CH ${index + 1}', enabled, current);
+                    return _channel('CH ${index + 1}', enabled, current);
                 }),
               ),
             ],

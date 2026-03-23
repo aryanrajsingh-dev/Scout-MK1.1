@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:comm_module/comm_module.dart';
 import 'package:mavlink_nrt/mavlink_parser.dart';
-import 'package:websocket_app/mavlink/telemetry.dart';
+import 'package:websocket_app/dialects/telemetry.dart';
 
 class WebSocketService {
   late Transport _transport;
@@ -12,15 +12,15 @@ class WebSocketService {
   final StreamController<Map<String, dynamic>> _ctrl = StreamController<Map<String, dynamic>>();
   late final MavlinkParser _mavParser;
 
-  final StreamController<HvBmsTelemetry> _hvBmsCtrl = StreamController<HvBmsTelemetry>.broadcast();
-  final StreamController<HvPduStatus> _hvPduCtrl = StreamController<HvPduStatus>.broadcast();
-  final StreamController<LvBatteryStatus> _lvBatteryCtrl = StreamController<LvBatteryStatus>.broadcast();
-  final StreamController<LvPduStatus> _lvPduCtrl = StreamController<LvPduStatus>.broadcast();
+  final StreamController<HvBatteryBms> _hvBmsCtrl = StreamController<HvBatteryBms>.broadcast();
+  final StreamController<HvPdu> _hvPduCtrl = StreamController<HvPdu>.broadcast();
+  final StreamController<LvBattery> _lvBatteryCtrl = StreamController<LvBattery>.broadcast();
+  final StreamController<LvPdu> _lvPduCtrl = StreamController<LvPdu>.broadcast();
 
-  Stream<HvBmsTelemetry> get hvBmsStream => _hvBmsCtrl.stream;
-  Stream<HvPduStatus> get hvPduStream => _hvPduCtrl.stream;
-  Stream<LvBatteryStatus> get lvBatteryStream => _lvBatteryCtrl.stream;
-  Stream<LvPduStatus> get lvPduStream => _lvPduCtrl.stream;
+  Stream<HvBatteryBms> get hvBmsStream => _hvBmsCtrl.stream;
+  Stream<HvPdu> get hvPduStream => _hvPduCtrl.stream;
+  Stream<LvBattery> get lvBatteryStream => _lvBatteryCtrl.stream;
+  Stream<LvPdu> get lvPduStream => _lvPduCtrl.stream;
 
   WebSocketService() {
     rawStream = _ctrl.stream.asBroadcastStream();
@@ -30,7 +30,7 @@ class WebSocketService {
 
     _mavParser.stream.listen((frame) {
       final msg = frame.message;
-      if (msg is ComputeTelemetry) {
+      if (msg is TelemetryStatus) {
         String _charsToString(List<int> chars) {
           final bytes = chars
               .takeWhile((c) => c != 0)
@@ -46,13 +46,13 @@ class WebSocketService {
           'temperature': _charsToString(msg.temperature),
           'softwareVersion': _charsToString(msg.softwareVersion),
         });
-      } else if (msg is HvBmsTelemetry) {
+      } else if (msg is HvBatteryBms) {
         _hvBmsCtrl.add(msg);
-      } else if (msg is HvPduStatus) {
+      } else if (msg is HvPdu) {
         _hvPduCtrl.add(msg);
-      } else if (msg is LvBatteryStatus) {
+      } else if (msg is LvBattery) {
         _lvBatteryCtrl.add(msg);
-      } else if (msg is LvPduStatus) {
+      } else if (msg is LvPdu) {
         _lvPduCtrl.add(msg);
       }
     });

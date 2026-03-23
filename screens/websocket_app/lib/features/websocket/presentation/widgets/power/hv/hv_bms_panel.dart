@@ -1,8 +1,9 @@
+import 'package:websocket_app/features/websocket/presentation/widgets/power/telemetry_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:websocket_app/features/websocket/provider/app_providers.dart';
-import 'package:websocket_app/mavlink/telemetry.dart';
+import 'package:websocket_app/dialects/telemetry.dart';
 
 class HvBmsPanel extends ConsumerWidget {
   const HvBmsPanel({super.key});
@@ -11,7 +12,7 @@ class HvBmsPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(webSocketServiceProvider);
 
-    return StreamBuilder<HvBmsTelemetry>(
+    return StreamBuilder<HvBatteryBms>(
       stream: service.hvBmsStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -37,7 +38,7 @@ class HvBmsPanel extends ConsumerWidget {
                   _dualMetricRow(
                     'SOH',
                     '${t.soh.toStringAsFixed(0)} %',
-                    _sohColor(t.soh),
+                    _sohColor(t.soh.toDouble()),
                     'Capacity Remaining',
                     '${t.capacityRemaining.toStringAsFixed(0)} Ah',
                   ),

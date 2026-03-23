@@ -2,7 +2,7 @@
   <version>2</version>
   <dialect>0</dialect>
   <messages>
-  <!---Compute Screen-->>
+  <!---Compute Screen-->
     <message id="1" name="TELEMETRY_STATUS">
       <description>CPU and memory usage plus temperature and software version for SCOUT dashboard.</description>
       <field name="cpu_usage" type="uint16_t">CPU usage percentage (0-100)</field>

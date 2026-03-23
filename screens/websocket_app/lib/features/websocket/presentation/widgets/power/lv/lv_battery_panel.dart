@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:websocket_app/features/websocket/provider/app_providers.dart';
-import 'package:websocket_app/mavlink/telemetry.dart';
+import 'package:websocket_app/dialects/telemetry.dart';
 
 class LvBatteryPanel extends ConsumerWidget {
   const LvBatteryPanel({super.key});
@@ -11,7 +11,7 @@ class LvBatteryPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final service = ref.watch(webSocketServiceProvider);
 
-    return StreamBuilder<LvBatteryStatus>(
+    return StreamBuilder<LvBattery>(
       stream: service.lvBatteryStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
