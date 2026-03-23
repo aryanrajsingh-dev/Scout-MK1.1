@@ -18,19 +18,18 @@ function jitter(n, delta, min, max) {
   return clamp(n + randInt(-delta, delta), min, max);
 }
 
-
 let powerState = {
   soc: 100,
   soh: 100,
   capacityAh: 200,
-  hvVoltage: 400,
+  hvVoltage: 50,
   hvCurrent: 0,
   hvTemp: 30,
   hvMainContactor: 1,
   motorCurrent: -10,
   dcDcPercent: 90,
   auxPercent: 100,
-  dcBusVoltage: 400,
+  dcBusVoltage: 50,
   hvFaultFlags: 0,
   maxCell: 3.65,
   minCell: 3.65,
@@ -46,7 +45,6 @@ let powerState = {
   lvLastReset: Date.now(),
   lastTime: Date.now(),
 };
-
 
 function updatePowerState() {
   const now = Date.now();
@@ -82,14 +80,18 @@ function updatePowerState() {
   if (powerState.soc <= 18 && powerState.hvCurrent < 0) {
     powerState.targetCurrent = 15 + Math.random() * 20;
   }
-  const minV = 40.0;
+
+  const minV = 40;
   const maxV = 58.4;
-  const internalResistance = 0.02;
+
   const socVoltage = minV + (powerState.soc / 100) * (maxV - minV);
-  const loadSag = powerState.hvCurrent * internalResistance;
-  powerState.hvVoltage = socVoltage - loadSag + (Math.random() - 0.5) * 0.15;
+
+  const loadSag = powerState.hvCurrent * 0.02;
+
+  powerState.hvVoltage = socVoltage - loadSag + (Math.random() - 0.5) * 0.2;
+
   if (powerState.hvVoltage < minV) powerState.hvVoltage = minV;
-  if (powerState.hvVoltage > maxV) powerState.hvVoltage = maxV;
+
   const ambientTemp = 25;
   const heat = (powerState.hvCurrent * powerState.hvCurrent) * 0.00003;
   const cooling = 0.02 * (powerState.hvTemp - ambientTemp);
@@ -116,8 +118,11 @@ function updatePowerState() {
   powerState.maxCell = maxCell;
   powerState.minCell = minCell;
   let faults = 0;
-  if (powerState.hvVoltage > 70) faults |= 1 << 0;
-  if (powerState.hvVoltage < 30) faults |= 1 << 1;
+  if (powerState.hvVoltage > 70) {
+    faults |= 1 << 0;
+  } else if (powerState.hvVoltage < 30) {
+    faults |= 1 << 1;
+  }
   if (powerState.hvTemp > 75) faults |= 1 << 2;
   if ((maxCell - minCell) > 0.05) faults |= 1 << 3;
   powerState.hvFaultFlags = faults;
@@ -226,22 +231,27 @@ function buildComputeFrame() {
   return buildMavlinkV2Frame(buf, 1, 138);
 }
 
-
 function buildHvBmsFrame() {
   const buf = Buffer.alloc(21, 0);
   let offset = 0;
-  buf.writeUInt16LE(Math.round(powerState.hvVoltage * 10), offset); offset += 2;
+  
+  buf.writeUInt16LE(Math.round(powerState.hvVoltage * 100), offset); offset += 2;
+
   buf.writeInt16LE(Math.round(powerState.hvCurrent * 10), offset); offset += 2;
+
   buf.writeUInt8(Math.round(powerState.soc), offset); offset += 1;
   buf.writeUInt8(Math.round(powerState.soh), offset); offset += 1;
+
   buf.writeUInt16LE(Math.round(powerState.capacityAh * powerState.soc / 100 * 10), offset); offset += 2;
+  
   buf.writeUInt16LE(Math.round(powerState.maxCell * 1000), offset); offset += 2;
   buf.writeUInt16LE(Math.round(powerState.minCell * 1000), offset); offset += 2;
+ 
   buf.writeInt16LE(Math.round(powerState.hvTemp * 10), offset); offset += 2;
+  
   buf.writeUInt8(powerState.hvFaultFlags & 0xff, offset); offset += 1;
   return buildMavlinkV2Frame(buf, 60001, 50);
 }
-
 
 function buildHvPduFrame() {
   const buf = Buffer.alloc(7, 0);
@@ -254,14 +264,12 @@ function buildHvPduFrame() {
   return buildMavlinkV2Frame(buf, 60002, 51);
 }
 
-
 function buildLvBatteryFrame() {
   const buf = Buffer.alloc(4, 0);
   buf.writeUInt16LE(Math.round(powerState.lvVoltage * 10), 0);
   buf.writeInt16LE(Math.round(powerState.lvCurrent * 10), 2);
   return buildMavlinkV2Frame(buf, 60003, 52);
 }
-
 
 function buildLvPduFrame() {
   const buf = Buffer.alloc(27, 0);
@@ -281,7 +289,6 @@ function buildLvPduFrame() {
   return buildMavlinkV2Frame(buf, 60004, 53);
 }
 
-
 function start() {
   const server = dgram.createSocket('udp4');
 
@@ -297,8 +304,20 @@ function start() {
       if (msgType === 0) {
         const key = `${rinfo.address}:${rinfo.port}`;
         clients.set(key, { address: rinfo.address, port: rinfo.port, lastSeen: Date.now() });
-        console.log('Registered client (binary)', rinfo.address, rinfo.port);
-        return;
+        updatePowerState();
+        const frames = [
+          buildComputeFrame(),
+          buildHvBmsFrame(),
+          buildHvPduFrame(),
+          buildLvBatteryFrame(),
+          buildLvPduFrame()
+        ];
+        const packet = Buffer.concat(frames);
+        server.send(packet, rinfo.port, rinfo.address, (err) => {
+          if (err) {
+            clients.delete(key);
+          }
+        });
       }
     }
   });
@@ -312,9 +331,7 @@ function start() {
 
   const pushInterval = setInterval(() => {
     if (clients.size === 0) return;
-
     updatePowerState();
-
     const frames = [
       buildComputeFrame(),
       buildHvBmsFrame(),
@@ -322,18 +339,15 @@ function start() {
       buildLvBatteryFrame(),
       buildLvPduFrame()
     ];
-
     const packet = Buffer.concat(frames);
-
     for (const [key, c] of clients.entries()) {
       server.send(packet, c.port, c.address, (err) => {
         if (err) {
-          console.error('Error sending to', c.address, c.port, err);
           clients.delete(key);
         }
       });
     }
-  }, 1000);
+  }, 500);
 
   process.on('SIGINT', () => {
     clearInterval(pushInterval);

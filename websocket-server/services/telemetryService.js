@@ -12,6 +12,9 @@ const telemetryService = {
   recordActivity() {},
 
   createPayload() {
+    if (cpu.previousSample) cpu.previousSample = null;
+    if (cpu.previousUsage) cpu.previousUsage = null;
+    if (memory.previousUsage) memory.previousUsage = null;
     const cpuValue = cpu.getCpuUsagePercent();
     const memoryValue = memory.getMemoryUsagePercent();
     const baseTemp = 40;
