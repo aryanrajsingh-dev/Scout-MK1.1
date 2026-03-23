@@ -1,0 +1,65 @@
+<mavlink>
+  <version>2</version>
+  <dialect>0</dialect>
+  <messages>
+  <!---Compute Screen-->>
+    <message id="1" name="TELEMETRY_STATUS">
+      <description>CPU and memory usage plus temperature and software version for SCOUT dashboard.</description>
+      <field name="cpu_usage" type="uint16_t">CPU usage percentage (0-100)</field>
+      <field name="memory_usage" type="uint16_t">Memory usage percentage (0-100)</field>
+      <field name="temperature" type="char[16]">Temperature string, e.g. 42C</field>
+      <field name="software_version" type="char[24]">Software version string</field>
+    </message>
+
+    <!-- HV Battery (BMS) -->
+    <message id="2" name="HV_BATTERY_BMS">
+      <description>High Voltage Battery Management System values</description>
+      <field name="soh" type="uint8_t">State of Health (%)</field>
+      <field name="capacity_remaining" type="float">Capacity Remaining (Ah)</field>
+      <field name="pack_voltage" type="float">Pack Voltage (V)</field>
+      <field name="pack_current" type="float">Pack Current (A)</field>
+      <field name="max_cell_voltage" type="float">Max Cell Voltage (V)</field>
+      <field name="min_cell_voltage" type="float">Min Cell Voltage (V)</field>
+      <field name="max_cell_temperature" type="float">Max Cell Temperature (C)</field>
+      <field name="fault_over_voltage" type="uint8_t">Fault: Over Voltage (1=Yes, 0=No)</field>
+      <field name="fault_under_voltage" type="uint8_t">Fault: Under Voltage (1=Yes, 0=No)</field>
+      <field name="fault_over_temperature" type="uint8_t">Fault: Over Temperature (1=Yes, 0=No)</field>
+      <field name="fault_cell_imbalance" type="uint8_t">Fault: Cell Imbalance (1=Yes, 0=No)</field>
+    </message>
+
+    <!-- HV PDU -->
+    <message id="3" name="HV_PDU">
+      <description>High Voltage Power Distribution Unit values</description>
+      <field name="main_contactor" type="uint8_t">Main Contactor (1=ON, 0=OFF)</field>
+      <field name="motor_current" type="float">Motor Current (A)</field>
+      <field name="dc_dc_contactor" type="uint8_t">DC-DC Contactor (%)</field>
+      <field name="aux_contactor" type="uint8_t">Aux Contactor (%)</field>
+      <field name="dc_bus_voltage" type="float">DC Bus Voltage (V)</field>
+    </message>
+
+    <!-- LV Battery -->
+    <message id="4" name="LV_BATTERY">
+      <description>Low Voltage Battery values</description>
+      <field name="voltage" type="float">Voltage (V)</field>
+      <field name="current" type="float">Current (A)</field>
+    </message>
+
+    <!-- LV PDU -->
+    <message id="5" name="LV_PDU">
+      <description>Low Voltage Power Distribution Unit values</description>
+      <field name="input_voltage" type="float">Input Voltage (V)</field>
+      <field name="input_current" type="float">Input Current (A)</field>
+      <field name="input_power" type="float">Input Power (W)</field>
+      <field name="output_current" type="float">Output Current (A)</field>
+      <field name="load_power" type="float">Load Power (W)</field>
+      <field name="temperature" type="float">Temperature (C)</field>
+      <field name="can_status" type="uint8_t">CAN Status (1=ON, 0=OFF)</field>
+      <field name="output_channel_1" type="float">Output Channel 1 Current (A)</field>
+      <field name="output_channel_2" type="float">Output Channel 2 Current (A)</field>
+      <field name="output_channel_3" type="float">Output Channel 3 Current (A)</field>
+      <field name="output_channel_4" type="float">Output Channel 4 Current (A)</field>
+      <field name="output_channel_5" type="float">Output Channel 5 Current (A)</field>
+      <field name="output_channel_6" type="float">Output Channel 6 Current (A)</field>
+    </message>
+  </messages>
+</mavlink>
