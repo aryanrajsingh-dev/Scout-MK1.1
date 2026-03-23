@@ -232,61 +232,60 @@ function buildComputeFrame() {
 }
 
 function buildHvBmsFrame() {
-  const buf = Buffer.alloc(21, 0);
+  // Use the generated dialect's layout: all floats (4 bytes) then uint8s
+  const buf = Buffer.alloc(29, 0);
   let offset = 0;
-  
-  buf.writeUInt16LE(Math.round(powerState.hvVoltage * 100), offset); offset += 2;
-
-  buf.writeInt16LE(Math.round(powerState.hvCurrent * 10), offset); offset += 2;
-
-  buf.writeUInt8(Math.round(powerState.soc), offset); offset += 1;
+  buf.writeFloatLE(powerState.capacityAh * powerState.soc / 100, offset); offset += 4; // capacityRemaining
+  buf.writeFloatLE(powerState.hvVoltage, offset); offset += 4; // packVoltage
+  buf.writeFloatLE(powerState.hvCurrent, offset); offset += 4; // packCurrent
+  buf.writeFloatLE(powerState.maxCell, offset); offset += 4; // maxCellVoltage
+  buf.writeFloatLE(powerState.minCell, offset); offset += 4; // minCellVoltage
+  buf.writeFloatLE(powerState.hvTemp, offset); offset += 4; // maxCellTemperature
   buf.writeUInt8(Math.round(powerState.soh), offset); offset += 1;
-
-  buf.writeUInt16LE(Math.round(powerState.capacityAh * powerState.soc / 100 * 10), offset); offset += 2;
-  
-  buf.writeUInt16LE(Math.round(powerState.maxCell * 1000), offset); offset += 2;
-  buf.writeUInt16LE(Math.round(powerState.minCell * 1000), offset); offset += 2;
- 
-  buf.writeInt16LE(Math.round(powerState.hvTemp * 10), offset); offset += 2;
-  
-  buf.writeUInt8(powerState.hvFaultFlags & 0xff, offset); offset += 1;
-  return buildMavlinkV2Frame(buf, 60001, 50);
+  buf.writeUInt8((powerState.hvFaultFlags & 1) ? 1 : 0, offset); offset += 1; // faultOverVoltage
+  buf.writeUInt8((powerState.hvFaultFlags & 2) ? 1 : 0, offset); offset += 1; // faultUnderVoltage
+  buf.writeUInt8((powerState.hvFaultFlags & 4) ? 1 : 0, offset); offset += 1; // faultOverTemperature
+  buf.writeUInt8((powerState.hvFaultFlags & 8) ? 1 : 0, offset); offset += 1; // faultCellImbalance
+  return buildMavlinkV2Frame(buf, 2, 187);
 }
 
 function buildHvPduFrame() {
-  const buf = Buffer.alloc(7, 0);
+  // Use the generated dialect's layout: all floats (4 bytes) then uint8s
+  const buf = Buffer.alloc(11, 0);
   let offset = 0;
+  buf.writeFloatLE(powerState.motorCurrent, offset); offset += 4;
+  buf.writeFloatLE(powerState.dcBusVoltage, offset); offset += 4;
   buf.writeUInt8(powerState.hvMainContactor, offset); offset += 1;
-  buf.writeInt16LE(Math.round(powerState.motorCurrent * 10), offset); offset += 2;
   buf.writeUInt8(powerState.dcDcPercent, offset); offset += 1;
   buf.writeUInt8(powerState.auxPercent, offset); offset += 1;
-  buf.writeUInt16LE(Math.round(powerState.dcBusVoltage * 10), offset); offset += 2;
-  return buildMavlinkV2Frame(buf, 60002, 51);
+  return buildMavlinkV2Frame(buf, 3, 19);
 }
 
 function buildLvBatteryFrame() {
-  const buf = Buffer.alloc(4, 0);
-  buf.writeUInt16LE(Math.round(powerState.lvVoltage * 10), 0);
-  buf.writeInt16LE(Math.round(powerState.lvCurrent * 10), 2);
-  return buildMavlinkV2Frame(buf, 60003, 52);
+  // Use the generated dialect's layout: all floats (4 bytes)
+  const buf = Buffer.alloc(8, 0);
+  let offset = 0;
+  buf.writeFloatLE(powerState.lvVoltage, offset); offset += 4;
+  buf.writeFloatLE(powerState.lvCurrent, offset); offset += 4;
+  return buildMavlinkV2Frame(buf, 4, 121);
 }
 
 function buildLvPduFrame() {
-  const buf = Buffer.alloc(27, 0);
+  // Use the generated dialect's layout: all floats (4 bytes), then uint8, then float, then uint8
+  const buf = Buffer.alloc(49, 0);
   let offset = 0;
-  buf.writeUInt16LE(Math.round(powerState.lvInputVoltage * 10), offset); offset += 2;
-  buf.writeInt16LE(Math.round(powerState.lvInputCurrent * 10), offset); offset += 2;
-  buf.writeUInt16LE(Math.round(powerState.lvInputPower), offset); offset += 2;
-  buf.writeInt16LE(Math.round(powerState.lvOutputCurrent * 10), offset); offset += 2;
-  buf.writeUInt16LE(Math.round(powerState.lvLoadPower), offset); offset += 2;
+  buf.writeFloatLE(powerState.lvInputVoltage, offset); offset += 4;
+  buf.writeFloatLE(powerState.lvInputCurrent, offset); offset += 4;
+  buf.writeFloatLE(powerState.lvInputPower, offset); offset += 4;
+  buf.writeFloatLE(powerState.lvOutputCurrent, offset); offset += 4;
+  buf.writeFloatLE(powerState.lvLoadPower, offset); offset += 4;
+  buf.writeFloatLE(powerState.lvTemperature, 20); // temperature at offset 20
+  offset = 24;
   for (let i = 0; i < 6; i++) {
-    buf.writeInt16LE(Math.round(powerState.lvChannelCurrents[i] * 10), offset);
-    offset += 2;
+    buf.writeFloatLE(powerState.lvChannelCurrents[i], offset); offset += 4;
   }
-  buf.writeUInt8(powerState.lvChannelMask, offset); offset += 1;
-  buf.writeInt16LE(Math.round(powerState.lvTemperature * 10), offset); offset += 2;
-  buf.writeUInt8(powerState.lvCanStatus, offset); offset += 1;
-  return buildMavlinkV2Frame(buf, 60004, 53);
+  buf.writeUInt8(powerState.lvCanStatus, 48); // canStatus at offset 48
+  return buildMavlinkV2Frame(buf, 5, 218);
 }
 
 function start() {
@@ -304,20 +303,6 @@ function start() {
       if (msgType === 0) {
         const key = `${rinfo.address}:${rinfo.port}`;
         clients.set(key, { address: rinfo.address, port: rinfo.port, lastSeen: Date.now() });
-        updatePowerState();
-        const frames = [
-          buildComputeFrame(),
-          buildHvBmsFrame(),
-          buildHvPduFrame(),
-          buildLvBatteryFrame(),
-          buildLvPduFrame()
-        ];
-        const packet = Buffer.concat(frames);
-        server.send(packet, rinfo.port, rinfo.address, (err) => {
-          if (err) {
-            clients.delete(key);
-          }
-        });
       }
     }
   });
@@ -327,10 +312,19 @@ function start() {
     console.log(`UDP server is listening on ${address.address || '0.0.0.0'}:${address.port}`);
   });
 
-  server.bind(PORT, '127.0.0.1');
+  server.bind(PORT, '0.0.0.0');
 
+  let lastSummaryLog = 0;
   const pushInterval = setInterval(() => {
-    if (clients.size === 0) return;
+    const now = Date.now();
+    // Drop clients that haven't pinged OR been sent to recently.
+    for (const [key, client] of clients.entries()) {
+      const lastActivity = Math.max(client?.lastSeen || 0, client?.lastSent || 0);
+      if (!lastActivity || (now - lastActivity) > 120000) {
+        clients.delete(key);
+      }
+    }
+
     updatePowerState();
     const frames = [
       buildComputeFrame(),
@@ -339,15 +333,22 @@ function start() {
       buildLvBatteryFrame(),
       buildLvPduFrame()
     ];
+
     const packet = Buffer.concat(frames);
-    for (const [key, c] of clients.entries()) {
-      server.send(packet, c.port, c.address, (err) => {
-        if (err) {
-          clients.delete(key);
-        }
+
+    if (clients.size === 0) return;
+
+    if (now - lastSummaryLog > 5000) {
+      lastSummaryLog = now;
+      console.log(`Telemetry: pushing to ${clients.size} client(s)`);
+    }
+
+    for (const client of clients.values()) {
+      server.send(packet, client.port, client.address, (err) => {
+        if (!err) client.lastSent = now;
       });
     }
-  }, 500);
+  }, 1000);
 
   process.on('SIGINT', () => {
     clearInterval(pushInterval);

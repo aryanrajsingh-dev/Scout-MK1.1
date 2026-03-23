@@ -1,4 +1,3 @@
-import 'package:websocket_app/features/websocket/presentation/widgets/power/telemetry_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,8 +57,8 @@ class HvBmsPanel extends ConsumerWidget {
                   ),
                   _dualMetricRow(
                     'Max Cell Temperature',
-                    '${t.maxTemp.toStringAsFixed(1)} °C',
-                    t.maxTemp > 50 ? Colors.red : null,
+                    '${t.maxCellTemperature.toStringAsFixed(1)} °C',
+                    t.maxCellTemperature > 50 ? Colors.red : null,
                     '',
                     '',
                   ),
@@ -72,10 +71,10 @@ class HvBmsPanel extends ConsumerWidget {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  _faultBox('Over Voltage', (t.faultFlags & (1 << 0)) == 0),
-                  _faultBox('Under Voltage', (t.faultFlags & (1 << 1)) == 0),
-                  _faultBox('Over Temperature', (t.faultFlags & (1 << 2)) == 0),
-                  _faultBox('Cell Imbalance', (t.faultFlags & (1 << 3)) == 0),
+                  _faultBox('Over Voltage', t.faultOverVoltage != 1),
+                  _faultBox('Under Voltage', t.faultUnderVoltage != 1),
+                  _faultBox('Over Temperature', t.faultOverTemperature != 1),
+                  _faultBox('Cell Imbalance', t.faultCellImbalance != 1),
                 ],
               ),
             ],

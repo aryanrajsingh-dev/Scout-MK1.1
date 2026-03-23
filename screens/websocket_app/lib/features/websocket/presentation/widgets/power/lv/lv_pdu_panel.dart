@@ -1,4 +1,3 @@
-import 'package:websocket_app/features/websocket/presentation/widgets/power/telemetry_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,6 +19,14 @@ class LvPduPanel extends ConsumerWidget {
         }
 
         final d = snapshot.data!;
+        final channelCurrents = <double>[
+          d.outputChannel1,
+          d.outputChannel2,
+          d.outputChannel3,
+          d.outputChannel4,
+          d.outputChannel5,
+          d.outputChannel6,
+        ];
 
         return Padding(
           padding: const EdgeInsets.all(6),
@@ -40,7 +47,7 @@ class LvPduPanel extends ConsumerWidget {
               const SizedBox(height: 4),
               _denseMetric('Temperature', '${d.temperature.toStringAsFixed(1)} °C'),
               const SizedBox(height: 4),
-              _denseMetric('CAN Status', d.canOk ? 'ON' : 'OFF'),
+              _denseMetric('CAN Status', d.canStatus == 1 ? 'ON' : 'OFF'),
               const SizedBox(height: 4),
               const _SectionHeader('Output Channels'),
               const SizedBox(height: 4),
@@ -48,9 +55,8 @@ class LvPduPanel extends ConsumerWidget {
                 spacing: 6,
                 runSpacing: 6,
                 children: List.generate(6, (index) {
-                    final enabled = d.channelEnabled(index);
-                    final current =
-                      index < d.channelCurrents.length ? d.channelCurrents[index] : 0.0;
+                    final current = index < channelCurrents.length ? channelCurrents[index] : 0.0;
+                    final enabled = current > 0.01;
                     return _channel('CH ${index + 1}', enabled, current);
                 }),
               ),

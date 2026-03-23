@@ -12,6 +12,9 @@ class WebSocketService {
   final StreamController<Map<String, dynamic>> _ctrl = StreamController<Map<String, dynamic>>();
   late final MavlinkParser _mavParser;
 
+  Timer? _keepAliveTimer;
+  bool _loggedParserActive = false;
+
   final StreamController<HvBatteryBms> _hvBmsCtrl = StreamController<HvBatteryBms>.broadcast();
   final StreamController<HvPdu> _hvPduCtrl = StreamController<HvPdu>.broadcast();
   final StreamController<LvBattery> _lvBatteryCtrl = StreamController<LvBattery>.broadcast();
@@ -30,6 +33,12 @@ class WebSocketService {
 
     _mavParser.stream.listen((frame) {
       final msg = frame.message;
+
+      if (!_loggedParserActive) {
+        _loggedParserActive = true;
+        print('[TELEMETRY] MAVLink parser active (${msg.runtimeType})');
+      }
+
       if (msg is TelemetryStatus) {
         String _charsToString(List<int> chars) {
           final bytes = chars
@@ -60,7 +69,7 @@ class WebSocketService {
 
   Future<void> connect(String wsUrl) async {
     final uri = Uri.parse(wsUrl.replaceFirst('ws://', 'http://'));
-    final port = uri.hasPort ? uri.port : 8080;
+    final port = uri.hasPort ? uri.port : 9000;
 
     InternetAddress serverAddress;
     try {
@@ -82,17 +91,26 @@ class WebSocketService {
       remotePort: port,
     );
 
-   await _transport.connect();
+    await _transport.connect();
 
     _transport.onData.listen((data) {
       _mavParser.parse(data);
-      print('Received data: ${data.length} bytes');
     });
 
     await _transport.send(Uint8List.fromList([0]));
+
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      try {
+        await _transport.send(Uint8List.fromList([0]));
+      } catch (e) {
+      }
+    });
   }
 
   void dispose() {
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = null;
     _transport.dispose();
     _ctrl.close();
     _hvBmsCtrl.close();

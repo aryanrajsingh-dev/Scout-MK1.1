@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:websocket_app/features/websocket/model/ws_service.dart';
 
 Future<void> main(List<String> args) async {
-  final url = args.isNotEmpty ? args.first : 'ws://localhost:8080';
+  final url = args.isNotEmpty ? args.first : 'ws://localhost:9000';
   final service = WebSocketService();
   await service.connect(url);
 

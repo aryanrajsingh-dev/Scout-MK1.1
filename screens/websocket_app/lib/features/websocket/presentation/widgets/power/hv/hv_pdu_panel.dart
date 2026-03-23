@@ -1,4 +1,3 @@
-import 'package:websocket_app/features/websocket/presentation/widgets/power/telemetry_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,13 +27,13 @@ class HvPduPanel extends ConsumerWidget {
             children: [
               const _SectionHeader('HV PDU'),
               const Divider(height: 10),
-              _denseMetric('Main Contactor', d.mainContactorBool ? 'ON' : 'OFF'),
+              _denseMetric('Main Contactor', d.mainContactor == 1 ? 'ON' : 'OFF'),
               const SizedBox(height: 4),
               _denseMetric('Motor Current', '${d.motorCurrent.toStringAsFixed(1)} A'),
               const SizedBox(height: 4),
-              _denseMetric('DC-DC Contactor', '${d.dcDcPercent} %'),
+              _denseMetric('DC-DC Contactor', '${d.dcDcContactor} %'),
               const SizedBox(height: 4),
-              _denseMetric('Aux Contactor', '${d.auxPercent} %'),
+              _denseMetric('Aux Contactor', '${d.auxContactor} %'),
               const SizedBox(height: 4),
               _denseMetric('DC Bus Voltage', '${d.dcBusVoltage.toStringAsFixed(1)} V'),
             ],

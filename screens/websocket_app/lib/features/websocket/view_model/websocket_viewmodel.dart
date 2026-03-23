@@ -16,7 +16,7 @@ class WebsocketViewModel extends ChangeNotifier {
   DisplayModel? get displayModel => _displayModel;
 
   Future<void> init(String host) async {
-    await _service.connect('ws://$host:8080');
+    await _service.connect('ws://$host:9000');
     _subscription = _service.rawStream.listen((msg) {
       if (msg['type'] == 'data') {
         _displayModel = DisplayModel(
