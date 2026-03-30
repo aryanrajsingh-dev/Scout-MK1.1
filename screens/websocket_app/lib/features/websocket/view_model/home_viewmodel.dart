@@ -2,25 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:websocket_app/features/websocket/model/display_model.dart';
-
 class HomeViewModel extends ChangeNotifier {
   String _selectedMenu = 'COMPUTE';
   Duration _upTime = Duration.zero;
   Timer? _upTimeTimer;
   double _batteryLevel = 0.85;
 
-  DisplayModel? _displayModel;
-
   String get selectedMenu => _selectedMenu;
   Duration get upTime => _upTime;
   double get batteryLevel => _batteryLevel;
-  DisplayModel? get displayModel => _displayModel;
-
-  void setDisplayModel(DisplayModel? model) {
-    _displayModel = model;
-    notifyListeners();
-  }
 
   void init() {
     _startUpTime();

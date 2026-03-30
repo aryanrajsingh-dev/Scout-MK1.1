@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:websocket_app/core/extensions/spacing_extensions.dart';
-import 'package:websocket_app/features/websocket/model/display_model.dart';
 
 class ComputeDetailsPanel extends StatelessWidget {
-  final DisplayModel? displayModel;
-
-  const ComputeDetailsPanel({super.key, this.displayModel});
+  const ComputeDetailsPanel({super.key});
 
   @override
   Widget build(BuildContext context) {

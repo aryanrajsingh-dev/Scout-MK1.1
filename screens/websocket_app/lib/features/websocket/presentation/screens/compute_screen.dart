@@ -113,7 +113,7 @@ class _ComputeScreenState extends ConsumerState<ComputeScreen> {
     required String temperature,
     required String softwareVersion,
   }) {
-    final computePanel = const ComputeDetailsPanel(displayModel: null);
+    final computePanel = const ComputeDetailsPanel();
     final cpuCard = CpuCard(cpuUsage: cpuUsage);
     final memoryCard = MemoryCard(memoryUsage: memoryUsage);
 
