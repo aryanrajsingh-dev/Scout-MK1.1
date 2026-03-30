@@ -23,11 +23,11 @@ class ComputeDetailsPanel extends StatelessWidget {
         );
     final headerStyle = headerBase.copyWith(
       color: Colors.white70,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
     );
     final cellStyle = cellBase.copyWith(
       color: Colors.white,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w700,
     );
 
     return Container(
@@ -52,7 +52,7 @@ class ComputeDetailsPanel extends StatelessWidget {
 
   Widget _buildMissionHealthTable(TextStyle headerStyle, TextStyle cellStyle) {
     const modules = [
-      {'name': 'Hardware interface', 'active': 'ACTIVE', 'inactive': 'INACTIVE'},
+      {'name': 'Hardware Interface', 'active': 'ACTIVE', 'inactive': 'INACTIVE'},
       {'name': 'CAN Actuator', 'active': 'ACTIVE', 'inactive': 'INACTIVE'},
       {'name': 'CAN Sensor', 'active': 'ACTIVE', 'inactive': 'INACTIVE'},
       {'name': 'RS 485', 'active': 'ACTIVE', 'inactive': 'INACTIVE'},
