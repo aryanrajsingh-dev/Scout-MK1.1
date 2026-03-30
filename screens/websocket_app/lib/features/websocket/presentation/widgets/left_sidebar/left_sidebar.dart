@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:websocket_app/features/websocket/provider/app_providers.dart';
 
-class LeftSidebar extends ConsumerWidget {
+class LeftSidebar extends StatelessWidget {
   final String selectedMenu;
   final ValueChanged<String> onMenuSelected;
 
@@ -13,7 +11,7 @@ class LeftSidebar extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     const labels = <String>['COMPUTE', 'POWER'];
 
     const textStyle = TextStyle(
@@ -52,7 +50,6 @@ class LeftSidebar extends ConsumerWidget {
               for (final label in labels) ...[
                 _buildButton(
                   context,
-                  ref,
                   label,
                   label == selectedMenu,
                   width: buttonWidth,
@@ -93,7 +90,6 @@ class LeftSidebar extends ConsumerWidget {
 
   Widget _buildButton(
     BuildContext context,
-    WidgetRef ref,
     String label,
     bool isSelected, {
     required double width,
@@ -103,7 +99,6 @@ class LeftSidebar extends ConsumerWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) {
-        ref.read(homeViewModelProvider).selectMenu(label);
         onMenuSelected(label);
       },
       child: SizedBox(

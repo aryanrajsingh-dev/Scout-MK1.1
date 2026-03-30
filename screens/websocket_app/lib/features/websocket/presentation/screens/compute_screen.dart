@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,14 +11,44 @@ import 'package:websocket_app/features/websocket/presentation/widgets/compute/me
 import 'package:websocket_app/features/websocket/presentation/widgets/compute/compute_details_panel.dart';
 import 'package:websocket_app/features/websocket/presentation/screens/power_screen.dart';
 
-class ComputeScreen extends ConsumerWidget {
+class ComputeScreen extends ConsumerStatefulWidget {
   const ComputeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final homeVm = ref.watch(homeViewModelProvider);
-    final displayModel = homeVm.displayModel;
-    final selectedMenu = homeVm.selectedMenu;
+  ConsumerState<ComputeScreen> createState() => _ComputeScreenState();
+}
+
+class _ComputeScreenState extends ConsumerState<ComputeScreen> {
+  String _selectedMenu = 'COMPUTE';
+  Duration _upTime = Duration.zero;
+  double _batteryLevel = 0.85;
+  Timer? _upTimeTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _upTimeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _upTime += const Duration(seconds: 1);
+        if (_upTime.inSeconds > 0 && _upTime.inSeconds % (4 * 60) == 0) {
+          _batteryLevel = (_batteryLevel - 0.02).clamp(0.0, 1.0);
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _upTimeTimer?.cancel();
+    _upTimeTimer = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(telemetryConnectionProvider);
+
+    final service = ref.watch(webSocketServiceProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1A),
@@ -24,23 +56,44 @@ class ComputeScreen extends ConsumerWidget {
         child: Column(
           children: [
             TopHeader(
-              upTime: homeVm.upTime,
+              upTime: _upTime,
               wifiConnected: true,
-              batteryLevel: homeVm.batteryLevel,
+              batteryLevel: _batteryLevel,
             ),
             Expanded(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   LeftSidebar(
-                    selectedMenu: selectedMenu,
-                    onMenuSelected: (_) {},
+                    selectedMenu: _selectedMenu,
+                    onMenuSelected: (menu) {
+                      setState(() {
+                        _selectedMenu = menu;
+                      });
+                    },
                   ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
-                      child: selectedMenu == 'COMPUTE'
-                          ? _buildDashboardGrid(true, displayModel)
+                      child: _selectedMenu == 'COMPUTE'
+                          ? StreamBuilder<Map<String, dynamic>>(
+                              stream: service.rawStream,
+                              builder: (context, snapshot) {
+                                final data = snapshot.data;
+                                final cpuUsage = (data?['cpuUsage'] as int?) ?? 0;
+                                final memoryUsage = (data?['memoryUsage'] as int?) ?? 0;
+                                final temperature = (data?['temperature'] as String?) ?? '';
+                                final softwareVersion = (data?['softwareVersion'] as String?) ?? '';
+
+                                return _buildDashboardGrid(
+                                  true,
+                                  cpuUsage: cpuUsage,
+                                  memoryUsage: memoryUsage,
+                                  temperature: temperature,
+                                  softwareVersion: softwareVersion,
+                                );
+                              },
+                            )
                           : const PowerScreen(),
                     ),
                   ),
@@ -53,10 +106,16 @@ class ComputeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDashboardGrid(bool isDesktopWidth, displayModel) {
-    final computePanel = ComputeDetailsPanel(displayModel: displayModel);
-    final cpuCard = CpuCard(cpuUsage: displayModel?.cpuUsage ?? 0);
-    final memoryCard = MemoryCard(memoryUsage: displayModel?.memoryUsage ?? 0);
+  Widget _buildDashboardGrid(
+    bool isDesktopWidth, {
+    required int cpuUsage,
+    required int memoryUsage,
+    required String temperature,
+    required String softwareVersion,
+  }) {
+    final computePanel = const ComputeDetailsPanel(displayModel: null);
+    final cpuCard = CpuCard(cpuUsage: cpuUsage);
+    final memoryCard = MemoryCard(memoryUsage: memoryUsage);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,7 +134,7 @@ class ComputeScreen extends ConsumerWidget {
               const SizedBox(height: 6),
               memoryCard,
               const SizedBox(height: 4),
-              _buildSoftwareAndTempRow(displayModel),
+              _buildSoftwareAndTempRow(softwareVersion, temperature),
             ],
           ),
         ),
@@ -83,14 +142,10 @@ class ComputeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSoftwareAndTempRow(displayModel) {
+  Widget _buildSoftwareAndTempRow(String softwareVersion, String temperature) {
     final softwareVersionText =
-        displayModel?.softwareVersion.isNotEmpty == true
-            ? displayModel!.softwareVersion
-            : 'v1.2.4-stable';
-    final temp = displayModel?.temperature.isNotEmpty == true
-        ? displayModel!.temperature
-        : '44°C';
+        softwareVersion.isNotEmpty ? softwareVersion : 'v1.2.4-stable';
+    final temp = temperature.isNotEmpty ? temperature : '44°C';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
